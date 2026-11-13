@@ -1,13 +1,155 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>i love u dea</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>i love u dea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#050505;color:#fff;overflow:hidden;
+    font-family:"Fira Code",ui-monospace,Menlo,Consolas,monospace}
+  ::selection{background:rgba(255,0,60,.3)}
+  .scanline{position:fixed;left:0;width:100%;height:100px;pointer-events:none;z-index:1;
+    background:linear-gradient(0deg,transparent,rgba(255,255,255,.03),transparent);
+    animation:scan 10s linear infinite}
+  @keyframes scan{from{top:-100px}to{top:100%}}
+  #console,#reveal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    transition:opacity .6s,transform .6s}
+  #console{padding:2rem}
+  #console .box{width:100%;max-width:42rem;font-size:15px;color:rgba(255,255,255,.8)}
+  .row{display:flex;gap:.5rem;min-height:1.6em}
+  .soft{color:rgba(255,143,177,.6)}
+  .ok{color:#4ade80}
+  .hint{color:rgba(255,255,255,.4);font-style:italic}
+  #after{opacity:0;transform:translateY(10px);transition:opacity .6s,transform .6s;
+    padding-top:2rem;display:flex;flex-direction:column;align-items:flex-start;gap:1.5rem}
+  #after.show{opacity:1;transform:none}
+  button{font:inherit;cursor:pointer}
+  #decrypt{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.5rem;color:#ff8fb1;
+    border:1px solid rgba(255,77,109,.3);background:rgba(255,77,109,.05);
+    letter-spacing:.2em;text-transform:uppercase;font-size:12px;transition:background .3s}
+  #decrypt:hover{background:rgba(255,77,109,.12)}
+  .cursor{display:inline-block;width:0;height:1em;border-right:2px solid #ff4d6d;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{border-color:transparent}}
+  .tiny{font-size:10px;color:rgba(255,255,255,.2);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  #reveal{opacity:0;pointer-events:none;flex-direction:column}
+  #reveal.on{opacity:1;pointer-events:auto}
+  canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  .title{position:fixed;bottom:2rem;left:0;right:0;z-index:5;text-align:center;opacity:0;transform:scale(.8);
+    transition:opacity 1.5s 3s,transform 1.5s 3s}
+  #reveal.on .title{opacity:1;transform:none}
+  .title h2{margin:0 0 .5rem;color:#ff4d6d;font-weight:400;font-size:20px;letter-spacing:.3em;text-transform:uppercase;
+    text-shadow:0 0 10px rgba(255,77,109,.5),0 0 20px rgba(255,77,109,.3)}
+  .title .line{width:48px;height:1px;background:rgba(255,77,109,.3);margin:0 auto 2rem}
+  #again{background:none;border:0;color:rgba(255,255,255,.25);font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+  #again:hover{color:rgba(255,255,255,.6)}
+  .corner{position:fixed;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.12);pointer-events:none}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
 
+<div id="console">
+  <div class="box">
+    <div class="row soft"><span>[system]</span><span id="typed"></span></div>
+    <div class="row"><span>[status]</span><span id="ready" class="ok"></span></div>
+    <div id="after">
+      <p class="hint" style="margin:0">&gt; One encrypted package found for you.</p>
+      <button id="decrypt" type="button">🔒 <span>Decrypt Message</span><span class="cursor"></span></button>
+      <p class="tiny" style="margin:0">(or just click anywhere)</p>
+    </div>
+  </div>
+</div>
+
+<div id="reveal">
+  <canvas id="c"></canvas>
+  <div class="title">
+    <button id="again" type="button">Re-encrypt</button>
+  </div>
+  <div class="corner" style="top:2rem;left:2rem">ln: 420<br>id: 0xDEADBEEF<br>type: organic_emotion</div>
+  <div class="corner" style="bottom:2rem;right:2rem">heart_reveal // success</div>
+</div>
+
+<script>
+(function () {
+  var consoleEl = document.getElementById('console');
+  var revealEl = document.getElementById('reveal');
+  var typed = document.getElementById('typed');
+  var ready = document.getElementById('ready');
+  var after = document.getElementById('after');
+  var finished = false;
+  var stage = 'console';
+  var msg = ' Initializing heart.PROTOCOL_v2.0...';
+  var i = 0;
+
+  (function type() {
+    if (i < msg.length) { typed.textContent += msg[i++]; setTimeout(type, 30); }
+    else { finished = true; ready.textContent = 'READY'; after.classList.add('show'); document.body.style.cursor = 'pointer'; }
+  })();
+
+  function showReveal() {
+    if (stage !== 'console' || !finished) return;
+    stage = 'reveal';
+    consoleEl.style.opacity = 0; consoleEl.style.transform = 'scale(1.05)'; consoleEl.style.pointerEvents = 'none';
+    revealEl.classList.add('on');
+    startHeart();
+  }
+  function showConsole() {
+    stage = 'console';
+    revealEl.classList.remove('on');
+    stopHeart();
+    consoleEl.style.opacity = 1; consoleEl.style.transform = 'none'; consoleEl.style.pointerEvents = 'auto';
+  }
+  document.body.addEventListener('click', showReveal);
+  document.getElementById('decrypt').addEventListener('click', function (e) { e.stopPropagation(); showReveal(); });
+  document.getElementById('again').addEventListener('click', function (e) { e.stopPropagation(); showConsole(); });
+
+  /* ---------- hati dari tulisan ---------- */
+  var canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+  var points = [], raf = 0, startTime = null, TEXT = 'i love u dea';
+
+  function heartXY(t) {
+    return [16 * Math.pow(Math.sin(t), 3),
+      -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))];
+  }
+  function init() {
+    var dpr = window.devicePixelRatio || 1, w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    points = [];
+    var cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 40, t, s, p;
+    for (t = 0; t < Math.PI * 2; t += 0.05) {
+      p = heartXY(t);
+      points.push({ x: cx + p[0] * scale, y: cy + p[1] * scale, a: 0, ta: .8 + Math.random() * .2, d: Math.random() * 2000 });
+    }
+    for (s = .2; s < 1; s += .2) {
+      for (t = 0; t < Math.PI * 2; t += 0.1) {
+        p = heartXY(t);
+        points.push({ x: cx + p[0] * scale * s, y: cy + p[1] * scale * s, a: 0, ta: .4 + Math.random() * .4, d: Math.random() * 3000 });
+      }
+    }
+  }
+  function draw(time) {
+    if (startTime === null) startTime = time;
+    var el = time - startTime, w = window.innerWidth, h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = '13px "Fira Code", monospace';
+    var tw = ctx.measureText(TEXT).width;
+    for (var k = 0; k < points.length; k++) {
+      var p = points[k];
+      if (el > p.d) p.a += (p.ta - p.a) * .02;
+      ctx.fillStyle = 'rgba(255,77,109,' + p.a + ')';
+      ctx.fillText(TEXT, p.x - tw / 2, p.y);
+    }
+    raf = requestAnimationFrame(draw);
+  }
+  function startHeart() { startTime = null; init(); cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }
+  function stopHeart() { cancelAnimationFrame(raf); }
+  window.addEventListener('resize', function () { if (stage === 'reveal') init(); });
+})();
+</script>
+</body>
+</html>
