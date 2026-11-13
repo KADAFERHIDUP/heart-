@@ -15,4 +15,4 @@ Setiap push ke `main` otomatis di-build dan dipublikasikan ke GitHub Pages
 lewat `.github/workflows/deploy.yml`.
 
 Domain sendiri: tambahkan file `public/CNAME` berisi nama domain
-(contoh: `heart.contohdomain.com`), lalu arahkan DNS ke GitHub Pages.
+(contoh: `heart.kadaferhidup.my.id`), lalu arahkan DNS ke GitHub Pages.
